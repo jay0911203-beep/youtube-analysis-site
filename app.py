@@ -7,11 +7,11 @@ from flask import Flask, request, jsonify, render_template
 from pytrends.request import TrendReq
 from datetime import datetime, timedelta, timezone
 
-# Flask가 표준 폴더('templates', 'static')를 자동으로 인식합니다.
+# Flask가 'templates'와 'static' 폴더를 자동으로 인식합니다.
 app = Flask(__name__)
 
 # Vercel 환경 변수를 우선적으로 사용하고, 없을 경우 코드에 있는 키를 사용합니다.
-API_KEY = os.environ.get('API_KEY', 'AIzaSyAvQGtMOXN2RYKDw4MD98jBxDAZTNTyLFs')
+API_KEY = os.environ.get('API_KEY', 'AIzaSyAvQGtMOXN2RYKDw4MD98jBxDAZTNTyLFs') # 본인의 키로 교체하세요
 
 def parse_duration(duration):
     if not duration: return 0
