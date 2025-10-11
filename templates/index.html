@@ -131,6 +131,22 @@
     <div class="container">
         <div id="trending-section">
             <h1>📈 실시간 인기 동영상</h1>
+            
+            <!-- 카테고리 선택 -->
+            <div style="text-align: center; margin-bottom: 20px;">
+                <label style="font-weight: bold; margin-right: 10px;">카테고리:</label>
+                <select id="category-select" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+                    <option value="all">전체</option>
+                    <option value="news">뉴스/정치 (50대+ 관심)</option>
+                    <option value="education">교육/강연</option>
+                    <option value="howto">실용/DIY</option>
+                    <option value="people">인물/블로그</option>
+                    <option value="travel">여행</option>
+                    <option value="health">건강 정보 (50대+)</option>
+                </select>
+                <button id="refresh-trends" style="margin-left: 10px; padding: 8px 15px; background-color: #ff0000; color: white; border: none; border-radius: 4px; cursor: pointer;">새로고침</button>
+            </div>
+            
             <div id="trending-lists">
                 <div class="trending-list" id="trends-kr">
                     <h2>🇰🇷 한국</h2>
@@ -187,8 +203,14 @@
             const jpLoader = document.querySelector('#trends-jp .loader');
             
             console.log('KR Container:', krContainer);
+            console.log('KR Loader:', krLoader);
             console.log('US Container:', usContainer);
             console.log('JP Container:', jpContainer);
+            
+            if (!krContainer || !usContainer || !jpContainer) {
+                console.error('❌ 컨테이너 요소를 찾을 수 없습니다!');
+                return;
+            }
             
             fetchTrendingVideos('KR', krContainer, krLoader);
             fetchTrendingVideos('US', usContainer, usLoader);
