@@ -30,11 +30,11 @@ def trending_keywords():
     geo_code = request.args.get('geo', 'US')
     print(f"🔍 Fetching trends for: {geo_code}")
     
-    # 방법 1: YouTube API로 인기 동영상 제목 가져오기
+    # YouTube API로 인기 동영상 정보 가져오기
     try:
         video_url = "https://www.googleapis.com/youtube/v3/videos"
         video_params = {
-            'part': 'snippet',
+            'part': 'snippet,statistics',
             'chart': 'mostPopular',
             'regionCode': geo_code,
             'maxResults': 30,
@@ -46,48 +46,21 @@ def trending_keywords():
         if video_res.status_code == 200:
             video_items = video_res.json().get('items', [])
             if video_items:
-                keywords = [item['snippet']['title'][:60] for item in video_items[:30]]
-                print(f"✅ YouTube API success for {geo_code}: {len(keywords)} items")
-                return jsonify(keywords)
+                trending_videos = []
+                for item in video_items:
+                    trending_videos.append({
+                        'id': item['id'],
+                        'title': item['snippet']['title'],
+                        'channelTitle': item['snippet']['channelTitle'],
+                        'thumbnail': item['snippet']['thumbnails']['medium']['url'],
+                        'viewCount': item.get('statistics', {}).get('viewCount', '0')
+                    })
+                print(f"✅ YouTube API success for {geo_code}: {len(trending_videos)} items")
+                return jsonify(trending_videos)
         else:
             print(f"❌ YouTube API failed: {video_res.status_code}")
     except Exception as yt_error:
         print(f"🚨 YouTube Trending Error for {geo_code}: {yt_error}")
-    
-    # 방법 2: Google Trends RSS (Pytrends보다 안정적)
-    try:
-        print(f"🔍 Trying Google Trends RSS for {geo_code}...")
-        rss_url = f"https://trends.google.com/trends/trendingsearches/daily/rss?geo={geo_code}"
-        response = requests.get(rss_url, timeout=10, headers={'User-Agent': 'Mozilla/5.0'})
-        
-        if response.status_code == 200:
-            import xml.etree.ElementTree as ET
-            root = ET.fromstring(response.content)
-            keywords = []
-            for item in root.findall('.//item/title'):
-                if item.text and len(keywords) < 30:
-                    keywords.append(item.text)
-            if keywords:
-                print(f"✅ Google Trends RSS success for {geo_code}: {len(keywords)} items")
-                return jsonify(keywords)
-        else:
-            print(f"❌ RSS failed: {response.status_code}")
-    except Exception as rss_error:
-        print(f"🚨 RSS Error for {geo_code}: {rss_error}")
-    
-    # 방법 3: Pytrends (가장 불안정)
-    country_map = {'KR': 'south_korea', 'US': 'united_states', 'JP': 'japan'}
-    country_name = country_map.get(geo_code, 'united_states')
-    
-    try:
-        print(f"🔍 Trying Pytrends for {geo_code} ({country_name})...")
-        pytrends = TrendReq(hl='en-US', tz=360, timeout=(5, 10), retries=2)
-        trending_df = pytrends.trending_searches(pn=country_name)
-        keywords = trending_df[0].head(30).tolist()
-        print(f"✅ Pytrends success for {geo_code}: {len(keywords)} items")
-        return jsonify(keywords)
-    except Exception as e:
-        print(f"🚨 Pytrends Error for {geo_code}: {e}")
     
     # 모든 방법 실패 시
     print(f"❌ All methods failed for {geo_code}")
