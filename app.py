@@ -3,7 +3,7 @@ import os
 import re
 import requests
 import pandas as pd
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory
 from pytrends.request import TrendReq
 from datetime import datetime, timedelta, timezone
 
@@ -15,7 +15,8 @@ static_dir = os.path.join(basedir, 'static')
 # Flask 앱 초기화 시 명시적으로 경로 지정
 app = Flask(__name__, 
             template_folder=template_dir,
-            static_folder=static_dir)
+            static_folder=static_dir,
+            static_url_path='/static')
 
 # Vercel 환경 변수를 우선적으로 사용하고, 없을 경우 코드에 있는 키를 사용합니다.
 API_KEY = os.environ.get('API_KEY', 'AIzaSyAvQGtMOXN2RYKDw4MD98jBxDAZTNTyLFs')
@@ -32,6 +33,11 @@ def parse_duration(duration):
 @app.route('/')
 def index():
     return render_template('index.html')
+
+# 정적 파일을 명시적으로 서빙
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(static_dir, filename)
 
 @app.route('/api/trending-keywords')
 def trending_keywords():
@@ -99,4 +105,5 @@ def search():
         return jsonify({"error": "API 요청 중 오류가 발생했습니다."}), 500
 
 # Vercel을 위한 핸들러
-app_handler = app
+if __name__ == '__main__':
+    app.run(debug=True)
