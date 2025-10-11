@@ -28,34 +28,56 @@ def index():
 @app.route('/api/trending-keywords')
 def trending_keywords():
     geo_code = request.args.get('geo', 'US')
+    
+    # 방법 1: YouTube API로 인기 동영상 제목에서 키워드 추출
+    try:
+        video_url = "https://www.googleapis.com/youtube/v3/videos"
+        video_params = {
+            'part': 'snippet',
+            'chart': 'mostPopular',
+            'regionCode': geo_code,
+            'maxResults': 30,
+            'key': API_KEY
+        }
+        video_res = requests.get(video_url, params=video_params, timeout=10)
+        
+        if video_res.status_code == 200:
+            video_items = video_res.json().get('items', [])
+            keywords = [item['snippet']['title'][:50] for item in video_items[:30]]
+            if keywords:
+                return jsonify(keywords)
+    except Exception as yt_error:
+        print(f"🚨 YouTube Trending Error for {geo_code}: {yt_error}")
+    
+    # 방법 2: Pytrends 시도
     country_map = {'KR': 'south_korea', 'US': 'united_states', 'JP': 'japan'}
     country_name = country_map.get(geo_code, 'united_states')
     
     try:
-        pytrends = TrendReq(hl='ko-KR', tz=540)
-        # trending_searches 메서드 사용 (today_searches 대신)
+        pytrends = TrendReq(hl='ko-KR', tz=540, timeout=(5, 10))
         trending_df = pytrends.trending_searches(pn=country_name)
         keywords = trending_df[0].head(30).tolist()
         return jsonify(keywords)
     except Exception as e:
         print(f"🚨 Pytrends Error for {geo_code}: {e}")
-        # 오류 발생 시 대체 방법: 직접 Google Trends RSS 사용
-        try:
-            rss_url = f"https://trends.google.com/trends/trendingsearches/daily/rss?geo={geo_code}"
-            response = requests.get(rss_url, timeout=10)
-            if response.status_code == 200:
-                import xml.etree.ElementTree as ET
-                root = ET.fromstring(response.content)
-                keywords = []
-                for item in root.findall('.//item/title'):
-                    if item.text and len(keywords) < 30:
-                        keywords.append(item.text)
-                if keywords:
-                    return jsonify(keywords)
-            return jsonify({"error": f"{geo_code} 트렌드 데이터를 가져올 수 없습니다."}), 500
-        except Exception as rss_error:
-            print(f"🚨 RSS Error for {geo_code}: {rss_error}")
-            return jsonify({"error": "트렌드 데이터를 가져오는 데 실패했습니다."}), 500
+    
+    # 방법 3: Google Trends RSS
+    try:
+        rss_url = f"https://trends.google.com/trends/trendingsearches/daily/rss?geo={geo_code}"
+        response = requests.get(rss_url, timeout=10)
+        if response.status_code == 200:
+            import xml.etree.ElementTree as ET
+            root = ET.fromstring(response.content)
+            keywords = []
+            for item in root.findall('.//item/title'):
+                if item.text and len(keywords) < 30:
+                    keywords.append(item.text)
+            if keywords:
+                return jsonify(keywords)
+    except Exception as rss_error:
+        print(f"🚨 RSS Error for {geo_code}: {rss_error}")
+    
+    return jsonify({"error": f"{geo_code} 트렌드 데이터를 가져올 수 없습니다."}), 500
 
 @app.route('/api/search')
 def search():
