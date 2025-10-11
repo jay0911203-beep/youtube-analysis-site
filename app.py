@@ -3,20 +3,11 @@ import os
 import re
 import requests
 import pandas as pd
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template
 from pytrends.request import TrendReq
 from datetime import datetime, timedelta, timezone
 
-# 현재 파일의 디렉토리 경로를 기준으로 templates와 static 폴더 지정
-basedir = os.path.abspath(os.path.dirname(__file__))
-template_dir = os.path.join(basedir, 'templates')
-static_dir = os.path.join(basedir, 'static')
-
-# Flask 앱 초기화 시 명시적으로 경로 지정
-app = Flask(__name__, 
-            template_folder=template_dir,
-            static_folder=static_dir,
-            static_url_path='/static')
+app = Flask(__name__)
 
 # Vercel 환경 변수를 우선적으로 사용하고, 없을 경우 코드에 있는 키를 사용합니다.
 API_KEY = os.environ.get('API_KEY', 'AIzaSyAvQGtMOXN2RYKDw4MD98jBxDAZTNTyLFs')
@@ -33,22 +24,6 @@ def parse_duration(duration):
 @app.route('/')
 def index():
     return render_template('index.html')
-
-# 정적 파일을 명시적으로 서빙
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    print(f"🔍 Static file requested: {filename}")
-    print(f"🔍 Static directory: {static_dir}")
-    print(f"🔍 Files in static: {os.listdir(static_dir) if os.path.exists(static_dir) else 'Directory not found'}")
-    
-    if not os.path.exists(static_dir):
-        return f"Static directory not found: {static_dir}", 404
-    
-    file_path = os.path.join(static_dir, filename)
-    if not os.path.exists(file_path):
-        return f"File not found: {file_path}", 404
-    
-    return send_from_directory(static_dir, filename)
 
 @app.route('/api/trending-keywords')
 def trending_keywords():
@@ -115,6 +90,5 @@ def search():
         print(f"🚨 YouTube API Error: {e}")
         return jsonify({"error": "API 요청 중 오류가 발생했습니다."}), 500
 
-# Vercel을 위한 핸들러
 if __name__ == '__main__':
     app.run(debug=True)
