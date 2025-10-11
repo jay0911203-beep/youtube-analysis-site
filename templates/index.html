@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>유튜브 트렌드 및 검색</title>
+    <title>유튜브 트렌드 및 검색 - 60대+ 콘텐츠</title>
     <style>
         body {
             font-family: sans-serif; background-color: #f4f4f9; color: #333;
@@ -18,6 +18,40 @@
         h2 { font-size: 1.3em; margin-bottom: 10px; margin-top: 0; }
         hr { border: 1px solid #eee; margin: 30px 0; }
         .hidden { display: none; }
+
+        /* 카테고리 선택 영역 */
+        .category-selector {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .category-selector label {
+            font-weight: bold;
+            margin-right: 10px;
+            font-size: 1.1em;
+        }
+        .category-selector select {
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            font-size: 0.95em;
+            min-width: 250px;
+        }
+        .category-selector button {
+            margin-left: 10px;
+            padding: 10px 20px;
+            background-color: #ff0000;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .category-selector button:hover {
+            background-color: #cc0000;
+        }
 
         /* 트렌드 동영상 섹션 */
         #trending-lists { 
@@ -45,13 +79,14 @@
             margin-bottom: 10px; 
             padding: 8px; 
             border-radius: 4px; 
-            transition: background 0.2s; 
+            transition: all 0.2s; 
             cursor: pointer;
             border: 1px solid #eee;
         }
         .trending-video-item:hover { 
             background-color: #f0f0f0;
             transform: translateX(2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .trending-video-item img { 
             width: 120px; 
@@ -99,7 +134,7 @@
         .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
         #keyword { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
         #period, #search-btn { padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
-        #search-btn { background-color: #ff0000; color: white; border: none; cursor: pointer; }
+        #search-btn { background-color: #ff0000; color: white; border: none; cursor: pointer; font-weight: bold; }
         #search-btn:hover { background-color: #c00000; }
 
         /* 탭 및 결과 섹션 */
@@ -109,7 +144,7 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        #loading { text-align: center; padding: 20px; }
+        #loading { text-align: center; padding: 20px; font-size: 1.1em; color: #666; }
         .video-item { display: flex; gap: 15px; border-bottom: 1px solid #eee; padding: 15px 0; }
         .thumbnail img { width: 120px; border-radius: 4px; }
         .info { flex-grow: 1; }
@@ -124,6 +159,9 @@
             }
             .video-item { flex-direction: column; }
             .thumbnail img { width: 100%; }
+            .category-selector select {
+                min-width: 200px;
+            }
         }
     </style>
 </head>
@@ -133,18 +171,26 @@
             <h1>📈 실시간 인기 동영상</h1>
             
             <!-- 카테고리 선택 -->
-            <div style="text-align: center; margin-bottom: 20px;">
-                <label style="font-weight: bold; margin-right: 10px;">카테고리:</label>
-                <select id="category-select" style="padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
-                    <option value="all">전체</option>
-                    <option value="news">뉴스/정치 (50대+ 관심)</option>
-                    <option value="education">교육/강연</option>
-                    <option value="howto">실용/DIY</option>
-                    <option value="people">인물/블로그</option>
-                    <option value="travel">여행</option>
-                    <option value="health">건강 정보 (50대+)</option>
+            <div class="category-selector">
+                <label>👴👵 연령대별 인기 콘텐츠:</label>
+                <select id="category-select">
+                    <option value="all">전체 (전 연령)</option>
+                    <optgroup label="📺 60대+ 추천 카테고리">
+                        <option value="health">🏥 건강/의료 정보</option>
+                        <option value="news">📰 뉴스/시사</option>
+                        <option value="religion">🙏 종교/명상/힐링</option>
+                        <option value="music">🎵 음악 (트로트/가요)</option>
+                        <option value="cooking">🍳 요리/반찬 만들기</option>
+                        <option value="travel">✈️ 여행/관광</option>
+                        <option value="hobby">🌱 취미/원예/텃밭</option>
+                    </optgroup>
+                    <optgroup label="기타 카테고리">
+                        <option value="education">📚 교육/강연</option>
+                        <option value="howto">🔧 실용/DIY</option>
+                        <option value="people">👤 인물/블로그</option>
+                    </optgroup>
                 </select>
-                <button id="refresh-trends" style="margin-left: 10px; padding: 8px 15px; background-color: #ff0000; color: white; border: none; border-radius: 4px; cursor: pointer;">새로고침</button>
+                <button id="refresh-trends">🔄 새로고침</button>
             </div>
             
             <div id="trending-lists">
@@ -191,9 +237,23 @@
     </div>
 
     <script>
+        console.log('=== 페이지 로드 시작 (60대+ 버전) ===');
+        
         // 페이지 로딩 시 트렌드 동영상 가져오기
         document.addEventListener('DOMContentLoaded', () => {
-            console.log("페이지 로딩 완료. 트렌드 동영상 가져오기를 시작합니다.");
+            console.log("✅ DOM 로딩 완료. 트렌드 동영상 가져오기를 시작합니다.");
+            loadTrendingVideos();
+            
+            // 새로고침 버튼 이벤트
+            document.getElementById('refresh-trends').addEventListener('click', () => {
+                console.log('🔄 새로고침 버튼 클릭됨');
+                loadTrendingVideos();
+            });
+        });
+        
+        function loadTrendingVideos() {
+            const category = document.getElementById('category-select').value;
+            console.log('📂 선택된 카테고리:', category);
             
             const krContainer = document.querySelector('#trends-kr .trending-videos');
             const krLoader = document.querySelector('#trends-kr .loader');
@@ -202,23 +262,26 @@
             const jpContainer = document.querySelector('#trends-jp .trending-videos');
             const jpLoader = document.querySelector('#trends-jp .loader');
             
-            console.log('KR Container:', krContainer);
-            console.log('KR Loader:', krLoader);
-            console.log('US Container:', usContainer);
-            console.log('JP Container:', jpContainer);
-            
             if (!krContainer || !usContainer || !jpContainer) {
                 console.error('❌ 컨테이너 요소를 찾을 수 없습니다!');
                 return;
             }
             
-            fetchTrendingVideos('KR', krContainer, krLoader);
-            fetchTrendingVideos('US', usContainer, usLoader);
-            fetchTrendingVideos('JP', jpContainer, jpLoader);
-        });
+            // 기존 내용 초기화 및 로더 표시
+            krContainer.innerHTML = '';
+            usContainer.innerHTML = '';
+            jpContainer.innerHTML = '';
+            krLoader.style.display = 'block';
+            usLoader.style.display = 'block';
+            jpLoader.style.display = 'block';
+            
+            fetchTrendingVideos('KR', krContainer, krLoader, category);
+            fetchTrendingVideos('US', usContainer, usLoader, category);
+            fetchTrendingVideos('JP', jpContainer, jpLoader, category);
+        }
 
-        async function fetchTrendingVideos(geo, containerElement, loaderElement) {
-            const url = `/api/trending-keywords?geo=${geo}`;
+        async function fetchTrendingVideos(geo, containerElement, loaderElement, category = 'all') {
+            const url = `/api/trending-keywords?geo=${geo}&category=${category}`;
             console.log(`[트렌드] ${geo} 국가 데이터 요청: ${url}`);
             
             if (!containerElement) {
@@ -235,7 +298,7 @@
                 }
                 
                 const videos = await response.json();
-                console.log(`[트렌드] ${geo} 데이터:`, videos);
+                console.log(`[트렌드] ${geo} 데이터 수신:`, videos.length, '개');
 
                 if (videos.error) {
                     throw new Error(`서버에서 오류를 반환했습니다: ${videos.error}`);
@@ -248,8 +311,7 @@
                     return;
                 }
                 
-                videos.forEach((video, index) => {
-                    console.log(`[트렌드] ${geo} Video ${index}:`, video);
+                videos.forEach((video) => {
                     const videoItem = document.createElement('div');
                     videoItem.classList.add('trending-video-item');
                     videoItem.onclick = () => window.open(`https://www.youtube.com/watch?v=${video.id}`, '_blank');
@@ -368,6 +430,8 @@
                 document.getElementById(button.dataset.tab).classList.add('active');
             });
         });
+        
+        console.log('=== 스크립트 로드 완료 ===');
     </script>
 </body>
 </html>
