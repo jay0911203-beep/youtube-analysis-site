@@ -1,0 +1,4 @@
+Flask
+requests
+pytrends==4.9.2
+pandas
