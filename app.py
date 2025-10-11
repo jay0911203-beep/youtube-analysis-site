@@ -7,11 +7,18 @@ from flask import Flask, request, jsonify, render_template
 from pytrends.request import TrendReq
 from datetime import datetime, timedelta, timezone
 
-# Flask가 'templates'와 'static' 폴더를 자동으로 인식합니다.
-app = Flask(__name__)
+# 현재 파일의 디렉토리 경로를 기준으로 templates와 static 폴더 지정
+basedir = os.path.abspath(os.path.dirname(__file__))
+template_dir = os.path.join(basedir, 'templates')
+static_dir = os.path.join(basedir, 'static')
+
+# Flask 앱 초기화 시 명시적으로 경로 지정
+app = Flask(__name__, 
+            template_folder=template_dir,
+            static_folder=static_dir)
 
 # Vercel 환경 변수를 우선적으로 사용하고, 없을 경우 코드에 있는 키를 사용합니다.
-API_KEY = os.environ.get('API_KEY', 'AIzaSyAvQGtMOXN2RYKDw4MD98jBxDAZTNTyLFs') # 본인의 키로 교체하세요
+API_KEY = os.environ.get('API_KEY', 'AIzaSyAvQGtMOXN2RYKDw4MD98jBxDAZTNTyLFs')
 
 def parse_duration(duration):
     if not duration: return 0
@@ -90,3 +97,6 @@ def search():
     except Exception as e:
         print(f"🚨 YouTube API Error: {e}")
         return jsonify({"error": "API 요청 중 오류가 발생했습니다."}), 500
+
+# Vercel을 위한 핸들러
+app_handler = app
