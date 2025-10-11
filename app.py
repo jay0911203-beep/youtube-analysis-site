@@ -7,7 +7,12 @@ from flask import Flask, request, jsonify, render_template, send_from_directory,
 from pytrends.request import TrendReq
 from datetime import datetime, timedelta, timezone
 
-app = Flask(__name__, static_folder='public', template_folder='public')
+# (수정) 파일 경로를 명확하게 지정하기 위한 설정
+# Vercel 환경에서 public 폴더를 찾을 수 있도록 절대 경로를 사용합니다.
+template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'public'))
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'public'))
+
+app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 
 # 🚨🚨🚨 중요: 이 부분을 반드시 본인의 유효한 유튜브 API 키로 교체해야 합니다! 🚨🚨🚨
 API_KEY = 'AIzaSyAvQGtMOXN2RYKDw4MD98jBxDAZTNTyLFs' # 본인의 키로 교체하세요
@@ -24,14 +29,14 @@ def parse_duration(duration):
 
 @app.route('/')
 def index():
-    # (수정) 브라우저가 HTML로 인식하도록 Content-Type 헤더를 명시적으로 설정합니다.
     response = make_response(render_template('index.html'))
     response.headers['Content-Type'] = 'text/html'
     return response
 
-@app.route('/<path:path>')
-def serve_static(path):
-    return send_from_directory('public', path)
+# (수정) /public 경로 요청을 처리하는 라우트 추가
+@app.route('/public/<path:path>')
+def serve_public(path):
+    return send_from_directory(static_dir, path)
 
 @app.route('/api/trending-keywords')
 def trending_keywords():
