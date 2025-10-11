@@ -28,7 +28,26 @@ def index():
 @app.route('/api/trending-keywords')
 def trending_keywords():
     geo_code = request.args.get('geo', 'US')
-    print(f"🔍 Fetching trends for: {geo_code}")
+    category = request.args.get('category', 'all')  # 카테고리 추가
+    
+    # YouTube 카테고리 ID 매핑
+    # 50대 이상이 주로 보는 카테고리들
+    category_map = {
+        'all': None,  # 전체
+        'news': '25',  # 뉴스/정치
+        'education': '27',  # 교육
+        'howto': '26',  # 실용/DIY
+        'people': '22',  # 인물/블로그
+        'travel': '19',  # 여행
+        'health': None  # 건강 (검색어 기반)
+    }
+    
+    category_id = category_map.get(category, None)
+    print(f"🔍 Fetching trends for: {geo_code}, category: {category}")
+    
+    # 건강 카테고리는 검색 기반으로 처리
+    if category == 'health':
+        return get_health_videos(geo_code)
     
     # YouTube API로 인기 동영상 정보 가져오기
     try:
@@ -40,7 +59,12 @@ def trending_keywords():
             'maxResults': 30,
             'key': API_KEY
         }
-        print(f"🔍 Trying YouTube API for {geo_code}...")
+        
+        # 카테고리가 지정된 경우 추가
+        if category_id:
+            video_params['videoCategoryId'] = category_id
+        
+        print(f"🔍 Trying YouTube API for {geo_code} with category {category}...")
         video_res = requests.get(video_url, params=video_params, timeout=10)
         
         if video_res.status_code == 200:
@@ -65,6 +89,62 @@ def trending_keywords():
     # 모든 방법 실패 시
     print(f"❌ All methods failed for {geo_code}")
     return jsonify({"error": f"{geo_code} 국가의 트렌드 데이터를 가져올 수 없습니다. 잠시 후 다시 시도해주세요."}), 500
+
+def get_health_videos(geo_code):
+    """건강 관련 인기 동영상 검색"""
+    try:
+        # 50대 이상이 관심있는 건강 키워드
+        health_keywords = {
+            'KR': '건강 정보 50대',
+            'US': 'health tips seniors',
+            'JP': '健康 シニア'
+        }
+        keyword = health_keywords.get(geo_code, 'health tips')
+        
+        search_url = "https://www.googleapis.com/youtube/v3/search"
+        search_params = {
+            'part': 'snippet',
+            'q': keyword,
+            'type': 'video',
+            'order': 'viewCount',
+            'regionCode': geo_code,
+            'maxResults': 30,
+            'key': API_KEY
+        }
+        
+        search_res = requests.get(search_url, params=search_params, timeout=10)
+        if search_res.status_code != 200:
+            return jsonify({"error": "검색 실패"}), 500
+        
+        video_ids = [item['id']['videoId'] for item in search_res.json().get('items', [])]
+        if not video_ids:
+            return jsonify([])
+        
+        # 동영상 상세 정보 가져오기
+        video_url = "https://www.googleapis.com/youtube/v3/videos"
+        video_params = {
+            'part': 'snippet,statistics',
+            'id': ','.join(video_ids),
+            'key': API_KEY
+        }
+        
+        video_res = requests.get(video_url, params=video_params, timeout=10)
+        video_items = video_res.json().get('items', [])
+        
+        trending_videos = []
+        for item in video_items:
+            trending_videos.append({
+                'id': item['id'],
+                'title': item['snippet']['title'],
+                'channelTitle': item['snippet']['channelTitle'],
+                'thumbnail': item['snippet']['thumbnails']['medium']['url'],
+                'viewCount': item.get('statistics', {}).get('viewCount', '0')
+            })
+        
+        return jsonify(trending_videos)
+    except Exception as e:
+        print(f"🚨 Health videos error: {e}")
+        return jsonify({"error": "건강 동영상을 가져올 수 없습니다."}), 500
 
 @app.route('/api/search')
 def search():
