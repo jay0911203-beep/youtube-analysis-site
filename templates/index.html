@@ -429,9 +429,14 @@
                 return;
             }
             videoArray.forEach(video => {
+                console.log('Video data:', video); // 디버깅용
+                
                 const subscriberText = video.subscriberCount === '비공개' 
                     ? '구독자: 비공개' 
                     : `구독자: ${Number(video.subscriberCount).toLocaleString()}명`;
+                
+                // 업로드 날짜 확인
+                const uploadDate = video.videoPublishedAt || video.publishedAt || '정보 없음';
                 
                 const videoElement = document.createElement('div');
                 videoElement.classList.add('video-item');
@@ -446,7 +451,8 @@
                         <p>${video.channelTitle}</p>
                         <p class="views">조회수: ${Number(video.viewCount).toLocaleString()}회</p>
                         <p class="subs">${subscriberText}</p>
-                        <p class="channel-date">채널 개설일: ${video.channelPublishedAt}</p>
+                        <p class="channel-date">채널 개설일: ${video.channelPublishedAt || '정보 없음'}</p>
+                        <p class="channel-date">📅 영상 업로드: ${uploadDate}</p>
                     </div>
                 `;
                 element.appendChild(videoElement);
