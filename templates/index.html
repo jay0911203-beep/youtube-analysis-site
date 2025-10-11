@@ -311,7 +311,17 @@
                     return;
                 }
                 
-                videos.forEach((video) => {
+                // 번역이 필요한 국가인지 확인
+                const needsTranslation = (geo === 'US' || geo === 'JP');
+                
+                for (const video of videos) {
+                    let translatedTitle = video.title;
+                    
+                    // 제목 번역 (한국이 아닌 경우)
+                    if (needsTranslation) {
+                        translatedTitle = await translateTitle(video.title, geo);
+                    }
+                    
                     const videoItem = document.createElement('div');
                     videoItem.classList.add('trending-video-item');
                     videoItem.onclick = () => window.open(`https://www.youtube.com/watch?v=${video.id}`, '_blank');
@@ -319,19 +329,42 @@
                     videoItem.innerHTML = `
                         <img src="${video.thumbnail}" alt="${video.title}">
                         <div class="trending-video-info">
-                            <h4>${video.title}</h4>
+                            <h4>${translatedTitle}</h4>
+                            ${needsTranslation ? `<p style="font-size: 0.7em; color: #999; font-style: italic;">원제: ${video.title}</p>` : ''}
                             <p>${video.channelTitle}</p>
                             <p class="views">조회수: ${Number(video.viewCount).toLocaleString()}회</p>
+                            <p style="font-size: 0.7em; color: #888; margin-top: 3px;">📅 ${video.publishedAt || '날짜 정보 없음'}</p>
                         </div>
                     `;
                     containerElement.appendChild(videoItem);
-                });
+                }
                 
                 console.log(`✅ [트렌드] ${geo} 데이터 표시 완료`);
             } catch (error) {
                 console.error(`❌ [트렌드] ${geo} 오류:`, error);
                 loaderElement.style.display = 'none';
                 containerElement.innerHTML = '<p style="padding: 10px; text-align: center; color: #f44336;">불러오기 실패</p>';
+            }
+        }
+
+        // 제목 번역 함수 (Google Translate API 없이 간단한 방법)
+        async function translateTitle(title, geo) {
+            try {
+                // Google Translate의 비공식 API 사용
+                const sourceLang = geo === 'JP' ? 'ja' : 'en';
+                const targetLang = 'ko';
+                const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(title)}`;
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data && data[0] && data[0][0] && data[0][0][0]) {
+                    return data[0][0][0];
+                }
+                return title; // 번역 실패 시 원본 반환
+            } catch (error) {
+                console.warn('번역 실패:', error);
+                return title; // 오류 시 원본 반환
             }
         }
 
