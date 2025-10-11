@@ -76,12 +76,17 @@ def trending_keywords():
             if video_items:
                 trending_videos = []
                 for item in video_items:
+                    # 업로드 날짜 파싱
+                    published_at = item['snippet'].get('publishedAt', '')
+                    upload_date = published_at.split('T')[0] if published_at else '정보 없음'
+                    
                     trending_videos.append({
                         'id': item['id'],
                         'title': item['snippet']['title'],
                         'channelTitle': item['snippet']['channelTitle'],
                         'thumbnail': item['snippet']['thumbnails']['medium']['url'],
-                        'viewCount': item.get('statistics', {}).get('viewCount', '0')
+                        'viewCount': item.get('statistics', {}).get('viewCount', '0'),
+                        'publishedAt': upload_date
                     })
                 print(f"✅ YouTube API success for {geo_code}: {len(trending_videos)} items")
                 return jsonify(trending_videos)
