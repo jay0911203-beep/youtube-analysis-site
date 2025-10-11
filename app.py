@@ -160,12 +160,17 @@ def get_search_based_videos(geo_code, category):
         
         trending_videos = []
         for item in video_items:
+            # 업로드 날짜 파싱
+            published_at = item['snippet'].get('publishedAt', '')
+            upload_date = published_at.split('T')[0] if published_at else '정보 없음'
+            
             trending_videos.append({
                 'id': item['id'],
                 'title': item['snippet']['title'],
                 'channelTitle': item['snippet']['channelTitle'],
                 'thumbnail': item['snippet']['thumbnails']['medium']['url'],
-                'viewCount': item.get('statistics', {}).get('viewCount', '0')
+                'viewCount': item.get('statistics', {}).get('viewCount', '0'),
+                'publishedAt': upload_date
             })
         
         return jsonify(trending_videos)
@@ -208,6 +213,11 @@ def search():
         for item in video_items:
             channel_info = channel_data_map.get(item['snippet']['channelId'], {})
             duration_in_seconds = parse_duration(item['contentDetails']['duration'])
+            
+            # 업로드 날짜 파싱
+            published_at = item['snippet'].get('publishedAt', '')
+            upload_date = published_at.split('T')[0] if published_at else '정보 없음'
+            
             final_data.append({
                 'id': item['id'],
                 'title': item['snippet']['title'],
@@ -216,6 +226,7 @@ def search():
                 'viewCount': item.get('statistics', {}).get('viewCount', '0'),
                 'subscriberCount': channel_info.get('subscriberCount', '정보 없음'),
                 'channelPublishedAt': channel_info.get('publishedAt', '정보 없음'),
+                'videoPublishedAt': upload_date,
                 'isShort': 0 < duration_in_seconds <= 60
             })
         final_data.sort(key=lambda x: int(x['viewCount']), reverse=True)
