@@ -1,18 +1,18 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import os
 import re
 import requests
 import pandas as pd
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template, send_from_directory, make_response
 from pytrends.request import TrendReq
 from datetime import datetime, timedelta, timezone
 
 app = Flask(__name__, static_folder='public', template_folder='public')
 
 # 🚨🚨🚨 중요: 이 부분을 반드시 본인의 유효한 유튜브 API 키로 교체해야 합니다! 🚨🚨🚨
-API_KEY = 'AIzaSyAvQGtMOXN2RYKDw4MD98jBxDAZTNTyLFs'
+API_KEY = 'AIzaSyAvQGtMOXN2RYKDw4MD98jBxDAZTNTyLFs' # 본인의 키로 교체하세요
 
-# ISO 8601 형식의 영상 길이(예: PT1M30S)를 초 단위로 변환하는 함수
+# 영상 길이를 초 단위로 변환하는 함수
 def parse_duration(duration):
     if not duration: return 0
     match = re.match(r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?', duration)
@@ -24,7 +24,10 @@ def parse_duration(duration):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    # (수정) 브라우저가 HTML로 인식하도록 Content-Type 헤더를 명시적으로 설정합니다.
+    response = make_response(render_template('index.html'))
+    response.headers['Content-Type'] = 'text/html'
+    return response
 
 @app.route('/<path:path>')
 def serve_static(path):
@@ -104,6 +107,3 @@ def search():
     except Exception as e:
         print(f"🚨 YouTube API Error: {e}")
         return jsonify({"error": "API 요청 중 오류가 발생했습니다."}), 500
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5001)
