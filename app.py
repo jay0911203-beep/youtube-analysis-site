@@ -37,6 +37,17 @@ def index():
 # 정적 파일을 명시적으로 서빙
 @app.route('/static/<path:filename>')
 def serve_static(filename):
+    print(f"🔍 Static file requested: {filename}")
+    print(f"🔍 Static directory: {static_dir}")
+    print(f"🔍 Files in static: {os.listdir(static_dir) if os.path.exists(static_dir) else 'Directory not found'}")
+    
+    if not os.path.exists(static_dir):
+        return f"Static directory not found: {static_dir}", 404
+    
+    file_path = os.path.join(static_dir, filename)
+    if not os.path.exists(file_path):
+        return f"File not found: {file_path}", 404
+    
     return send_from_directory(static_dir, filename)
 
 @app.route('/api/trending-keywords')
