@@ -31,7 +31,6 @@ def trending_keywords():
     category = request.args.get('category', 'all')  # 카테고리 추가
     
     # YouTube 카테고리 ID 매핑
-    # 50대 이상이 주로 보는 카테고리들
     category_map = {
         'all': None,  # 전체
         'news': '25',  # 뉴스/정치
@@ -39,15 +38,20 @@ def trending_keywords():
         'howto': '26',  # 실용/DIY
         'people': '22',  # 인물/블로그
         'travel': '19',  # 여행
-        'health': None  # 건강 (검색어 기반)
+        'health': None,  # 건강 (검색어 기반)
+        'music': '10',  # 음악 (트로트/가요)
+        'religion': None,  # 종교 (검색어 기반)
+        'cooking': None,  # 요리 (검색어 기반)
+        'hobby': None,  # 취미/원예 (검색어 기반)
     }
     
     category_id = category_map.get(category, None)
     print(f"🔍 Fetching trends for: {geo_code}, category: {category}")
     
-    # 건강 카테고리는 검색 기반으로 처리
-    if category == 'health':
-        return get_health_videos(geo_code)
+    # 검색어 기반 카테고리들
+    search_based_categories = ['health', 'religion', 'cooking', 'hobby']
+    if category in search_based_categories:
+        return get_search_based_videos(geo_code, category)
     
     # YouTube API로 인기 동영상 정보 가져오기
     try:
@@ -90,16 +94,34 @@ def trending_keywords():
     print(f"❌ All methods failed for {geo_code}")
     return jsonify({"error": f"{geo_code} 국가의 트렌드 데이터를 가져올 수 없습니다. 잠시 후 다시 시도해주세요."}), 500
 
-def get_health_videos(geo_code):
-    """건강 관련 인기 동영상 검색"""
+def get_search_based_videos(geo_code, category):
+    """검색어 기반 카테고리 동영상 가져오기"""
     try:
-        # 50대 이상이 관심있는 건강 키워드
-        health_keywords = {
-            'KR': '건강 정보 50대',
-            'US': 'health tips seniors',
-            'JP': '健康 シニア'
+        # 60대 이상이 관심있는 키워드들
+        keywords_map = {
+            'health': {
+                'KR': '건강 60대 시니어',
+                'US': 'health tips seniors 60+',
+                'JP': '健康 60代 シニア'
+            },
+            'religion': {
+                'KR': '명상 힐링 설교',
+                'US': 'meditation spiritual',
+                'JP': '瞑想 癒し'
+            },
+            'cooking': {
+                'KR': '요리 반찬 만들기',
+                'US': 'cooking recipes traditional',
+                'JP': '料理 レシピ 伝統'
+            },
+            'hobby': {
+                'KR': '텃밭 원예 취미',
+                'US': 'gardening hobby seniors',
+                'JP': '園芸 趣味 シニア'
+            }
         }
-        keyword = health_keywords.get(geo_code, 'health tips')
+        
+        keyword = keywords_map.get(category, {}).get(geo_code, 'seniors lifestyle')
         
         search_url = "https://www.googleapis.com/youtube/v3/search"
         search_params = {
@@ -143,8 +165,8 @@ def get_health_videos(geo_code):
         
         return jsonify(trending_videos)
     except Exception as e:
-        print(f"🚨 Health videos error: {e}")
-        return jsonify({"error": "건강 동영상을 가져올 수 없습니다."}), 500
+        print(f"🚨 Search-based videos error: {e}")
+        return jsonify({"error": "동영상을 가져올 수 없습니다."}), 500
 
 @app.route('/api/search')
 def search():
