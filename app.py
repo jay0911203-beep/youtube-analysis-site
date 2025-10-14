@@ -128,6 +128,10 @@ def get_search_based_videos(geo_code, category):
         
         keyword = keywords_map.get(category, {}).get(geo_code, 'seniors lifestyle')
         
+        # 최근 1년 날짜 계산
+        one_year_ago = datetime.now(timezone.utc) - timedelta(days=365)
+        published_after = one_year_ago.isoformat().replace('+00:00', 'Z')
+        
         search_url = "https://www.googleapis.com/youtube/v3/search"
         search_params = {
             'part': 'snippet',
@@ -136,6 +140,7 @@ def get_search_based_videos(geo_code, category):
             'order': 'viewCount',
             'regionCode': geo_code,
             'maxResults': 30,
+            'publishedAfter': published_after,  # 최근 1년 필터
             'key': API_KEY
         }
         
