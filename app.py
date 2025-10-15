@@ -223,18 +223,38 @@ def search():
             published_at = item['snippet'].get('publishedAt', '')
             upload_date = published_at.split('T')[0] if published_at else '정보 없음'
             
-            final_data.append({
-                'id': item['id'],
-                'title': item['snippet']['title'],
-                'channelTitle': item['snippet']['channelTitle'],
-                'thumbnail': item['snippet']['thumbnails']['default']['url'],
-                'viewCount': item.get('statistics', {}).get('viewCount', '0'),
-                'subscriberCount': channel_info.get('subscriberCount', '정보 없음'),
-                'channelPublishedAt': channel_info.get('publishedAt', '정보 없음'),
-                'videoPublishedAt': upload_date,
-                'isShort': 0 < duration_in_seconds <= 60
-            })
+            # 구독자 수와 조회수 가져오기
+            subscriber_count = channel_info.get('subscriberCount', '0')
+            view_count = item.get('statistics', {}).get('viewCount', '0')
+            
+            # 문자열을 숫자로 변환 (비공개인 경우 제외)
+            try:
+                subscriber_num = int(subscriber_count) if subscriber_count != '비공개' else 999999
+                view_num = int(view_count)
+            except:
+                continue  # 변환 실패 시 건너뛰기
+            
+            # 필터링: 구독자 1만명 이하 AND 조회수 1만 이상
+            if subscriber_num <= 10000 and view_num >= 10000:
+                final_data.append({
+                    'id': item['id'],
+                    'title': item['snippet']['title'],
+                    'channelTitle': item['snippet']['channelTitle'],
+                    'thumbnail': item['snippet']['thumbnails']['default']['url'],
+                    'viewCount': view_count,
+                    'subscriberCount': channel_info.get('subscriberCount', '정보 없음'),
+                    'channelPublishedAt': channel_info.get('publishedAt', '정보 없음'),
+                    'videoPublishedAt': upload_date,
+                    'isShort': 0 < duration_in_seconds <= 60
+                })
         final_data.sort(key=lambda x: int(x['viewCount']), reverse=True)
+        
+        # 필터링 후 결과가 없는 경우 로그 출력
+        if not final_data:
+            print(f"⚠️ 검색 결과가 필터링 조건(구독자 ≤1만, 조회수 ≥1만)을 만족하는 영상이 없습니다.")
+        else:
+            print(f"✅ 필터링 완료: {len(final_data)}개 영상 (구독자 ≤1만, 조회수 ≥1만)")
+        
         return jsonify(final_data)
     except Exception as e:
         print(f"🚨 YouTube API Error: {e}")
